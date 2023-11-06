@@ -52,17 +52,17 @@ use core::marker::PhantomData;
 /// Weight functions needed for `pallet_identity`.
 pub trait WeightInfo {
 	fn add_registrar(r: u32, ) -> Weight;
-	fn set_identity(r: u32, x: u32, ) -> Weight;
+	fn set_identity(r: u32, ) -> Weight;
 	fn set_subs_new(s: u32, ) -> Weight;
 	fn set_subs_old(p: u32, ) -> Weight;
-	fn clear_identity(r: u32, s: u32, x: u32, ) -> Weight;
-	fn request_judgement(r: u32, x: u32, ) -> Weight;
-	fn cancel_request(r: u32, x: u32, ) -> Weight;
+	fn clear_identity(r: u32, s: u32, ) -> Weight;
+	fn request_judgement(r: u32, ) -> Weight;
+	fn cancel_request(r: u32, ) -> Weight;
 	fn set_fee(r: u32, ) -> Weight;
 	fn set_account_id(r: u32, ) -> Weight;
 	fn set_fields(r: u32, ) -> Weight;
-	fn provide_judgement(r: u32, x: u32, ) -> Weight;
-	fn kill_identity(r: u32, s: u32, x: u32, ) -> Weight;
+	fn provide_judgement(r: u32, ) -> Weight;
+	fn kill_identity(r: u32, s: u32, ) -> Weight;
 	fn add_sub(s: u32, ) -> Weight;
 	fn rename_sub(s: u32, ) -> Weight;
 	fn remove_sub(s: u32, ) -> Weight;
@@ -89,8 +89,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
 	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7538), added: 10013, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn set_identity(r: u32, x: u32, ) -> Weight {
+	fn set_identity(r: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `442 + r * (5 ±0)`
 		//  Estimated: `11003`
@@ -151,8 +150,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Identity::SuperOf` (`max_values`: None, `max_size`: Some(114), added: 2589, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
 	/// The range of component `s` is `[0, 100]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn clear_identity(r: u32, s: u32, x: u32, ) -> Weight {
+	fn clear_identity(r: u32, s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `469 + r * (5 ±0) + s * (32 ±0) + x * (66 ±0)`
 		//  Estimated: `11003`
@@ -173,8 +171,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
 	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7538), added: 10013, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn request_judgement(r: u32, x: u32, ) -> Weight {
+	fn request_judgement(r: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `367 + r * (57 ±0) + x * (66 ±0)`
 		//  Estimated: `11003`
@@ -190,8 +187,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
 	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7538), added: 10013, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn cancel_request(r: u32, x: u32, ) -> Weight {
+	fn cancel_request(r: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `398 + x * (66 ±0)`
 		//  Estimated: `11003`
@@ -251,8 +247,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
 	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7538), added: 10013, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 19]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn provide_judgement(r: u32, x: u32, ) -> Weight {
+	fn provide_judgement(r: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `445 + r * (57 ±0) + x * (66 ±0)`
 		//  Estimated: `11003`
@@ -275,8 +270,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Identity::SuperOf` (`max_values`: None, `max_size`: Some(114), added: 2589, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
 	/// The range of component `s` is `[0, 100]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn kill_identity(r: u32, s: u32, x: u32, ) -> Weight {
+	fn kill_identity(r: u32, s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `676 + r * (5 ±0) + s * (32 ±0) + x * (66 ±0)`
 		//  Estimated: `11003`
@@ -383,8 +377,7 @@ impl WeightInfo for () {
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
 	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7538), added: 10013, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn set_identity(r: u32, x: u32, ) -> Weight {
+	fn set_identity(r: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `442 + r * (5 ±0)`
 		//  Estimated: `11003`
@@ -445,8 +438,7 @@ impl WeightInfo for () {
 	/// Proof: `Identity::SuperOf` (`max_values`: None, `max_size`: Some(114), added: 2589, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
 	/// The range of component `s` is `[0, 100]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn clear_identity(r: u32, s: u32, x: u32, ) -> Weight {
+	fn clear_identity(r: u32, s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `469 + r * (5 ±0) + s * (32 ±0) + x * (66 ±0)`
 		//  Estimated: `11003`
@@ -467,8 +459,7 @@ impl WeightInfo for () {
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
 	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7538), added: 10013, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn request_judgement(r: u32, x: u32, ) -> Weight {
+	fn request_judgement(r: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `367 + r * (57 ±0) + x * (66 ±0)`
 		//  Estimated: `11003`
@@ -484,8 +475,7 @@ impl WeightInfo for () {
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
 	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7538), added: 10013, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn cancel_request(r: u32, x: u32, ) -> Weight {
+	fn cancel_request(r: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `398 + x * (66 ±0)`
 		//  Estimated: `11003`
@@ -545,8 +535,7 @@ impl WeightInfo for () {
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
 	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7538), added: 10013, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 19]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn provide_judgement(r: u32, x: u32, ) -> Weight {
+	fn provide_judgement(r: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `445 + r * (57 ±0) + x * (66 ±0)`
 		//  Estimated: `11003`
@@ -569,8 +558,7 @@ impl WeightInfo for () {
 	/// Proof: `Identity::SuperOf` (`max_values`: None, `max_size`: Some(114), added: 2589, mode: `MaxEncodedLen`)
 	/// The range of component `r` is `[1, 20]`.
 	/// The range of component `s` is `[0, 100]`.
-	/// The range of component `x` is `[0, 100]`.
-	fn kill_identity(r: u32, s: u32, x: u32, ) -> Weight {
+	fn kill_identity(r: u32, s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `676 + r * (5 ±0) + s * (32 ±0) + x * (66 ±0)`
 		//  Estimated: `11003`

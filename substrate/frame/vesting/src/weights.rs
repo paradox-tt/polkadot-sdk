@@ -27,13 +27,8 @@
 // ./target/production/substrate-node
 // benchmark
 // pallet
-// --chain=dev
 // --steps=50
 // --repeat=20
-// --pallet=pallet_vesting
-// --no-storage-info
-// --no-median-slopes
-// --no-min-squares
 // --extrinsic=*
 // --wasm-execution=compiled
 // --heap-pages=4096
@@ -59,6 +54,7 @@ pub trait WeightInfo {
 	fn force_vested_transfer(l: u32, s: u32, ) -> Weight;
 	fn not_unlocking_merge_schedules(l: u32, s: u32, ) -> Weight;
 	fn unlocking_merge_schedules(l: u32, s: u32, ) -> Weight;
+	fn force_remove_vesting_schedule(l: u32, s: u32, ) -> Weight;
 }
 
 /// Weights for `pallet_vesting` using the Substrate node and recommended hardware.
