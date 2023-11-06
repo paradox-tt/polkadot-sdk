@@ -72,7 +72,7 @@ mod error;
 mod futures_undead;
 mod metrics;
 mod task;
-use metrics::Metrics;
+pub use metrics::Metrics;
 
 #[cfg(test)]
 mod tests;
@@ -670,7 +670,7 @@ impl AvailabilityRecoverySubsystem {
 		}
 	}
 
-	async fn run<Context>(self, mut ctx: Context) -> std::result::Result<(), FatalError> {
+	pub async fn run<Context>(self, mut ctx: Context) -> std::result::Result<(), FatalError> {
 		let mut state = State::default();
 		let Self { mut req_receiver, metrics, recovery_strategy_kind, bypass_availability_store } =
 			self;
@@ -705,9 +705,12 @@ impl AvailabilityRecoverySubsystem {
 		.into_iter()
 		.cycle();
 
+		gum::debug!("Subsystem running");
 		loop {
 			let recv_req = req_receiver.recv(|| vec![COST_INVALID_REQUEST]).fuse();
 			pin_mut!(recv_req);
+			gum::debug!("waiting for message");
+
 			let res = futures::select! {
 				erasure_task = erasure_task_rx.next() => {
 					match erasure_task {
@@ -720,6 +723,10 @@ impl AvailabilityRecoverySubsystem {
 								.map_err(|_| RecoveryError::ChannelClosed)
 						},
 						None => {
+							gum::trace!(
+								target: LOG_TARGET,
+								"Erasure task channel closed",
+							);
 							Err(RecoveryError::ChannelClosed)
 						}
 					}.map_err(Into::into)
@@ -732,6 +739,7 @@ impl AvailabilityRecoverySubsystem {
 									&mut state,
 									signal,
 								).await {
+									gum::debug!(target: LOG_TARGET, "subsystem concluded");
 									return Ok(());
 								} else {
 									Ok(())
@@ -898,7 +906,7 @@ async fn erasure_task_thread(
 				let _ = sender.send(maybe_data);
 			},
 			None => {
-				gum::debug!(
+				gum::trace!(
 					target: LOG_TARGET,
 					"Erasure task channel closed. Node shutting down ?",
 				);
