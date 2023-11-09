@@ -30,7 +30,7 @@ use polkadot_availability_recovery::AvailabilityRecoverySubsystem;
 
 use parity_scale_codec::Encode;
 use polkadot_node_network_protocol::request_response::{
-	self as req_res, v1::ChunkResponse, IncomingRequest, ReqProtocolNames, Requests,
+	self as req_res, v1::ChunkResponse, IncomingRequest, Recipient, ReqProtocolNames, Requests,
 };
 
 use prometheus::Registry;
@@ -40,8 +40,8 @@ use polkadot_erasure_coding::{branches, obtain_chunks_v1 as obtain_chunks};
 use polkadot_node_primitives::{BlockData, PoV, Proof};
 use polkadot_node_subsystem::{
 	messages::{
-		AllMessages, AvailabilityRecoveryMessage, AvailabilityStoreMessage, NetworkBridgeTxMessage,
-		RuntimeApiMessage, RuntimeApiRequest,
+		AllMessages, AvailabilityRecoveryMessage, AvailabilityStoreMessage, ChainApiMessage,
+		NetworkBridgeTxMessage, RuntimeApiMessage, RuntimeApiRequest,
 	},
 	ActiveLeavesUpdate, FromOrchestra, OverseerSignal, Subsystem,
 };
@@ -56,8 +56,9 @@ use polkadot_node_subsystem_test_helpers::{
 };
 use polkadot_node_subsystem_util::TimeoutExt;
 use polkadot_primitives::{
-	AuthorityDiscoveryId, CandidateReceipt, GroupIndex, Hash, HeadData, IndexedVec,
-	PersistedValidationData, SessionIndex, SessionInfo, ValidatorId, ValidatorIndex,
+	vstaging::ClientFeatures, AuthorityDiscoveryId, BlockNumber, CandidateReceipt, ChunkIndex,
+	GroupIndex, Hash, HeadData, IndexedVec, PersistedValidationData, SessionIndex, SessionInfo,
+	ValidatorId, ValidatorIndex,
 };
 use polkadot_primitives_test_helpers::{dummy_candidate_receipt, dummy_hash};
 use sc_service::{SpawnTaskHandle, TaskManager};
@@ -118,10 +119,28 @@ impl TestEnvironment {
 
 	pub fn respond_to_send_request(state: &mut TestState, request: Requests) -> NetworkAction {
 		match request {
+			Requests::AvailableDataFetchingV1(outgoing_request) => {
+				let available_data = state.available_data.clone();
+				let size = available_data.encoded_size();
+				let validator_index = state.validator_index(outgoing_request.peer);
+
+				let future = async move {
+					let _ = outgoing_request.pending_response.send(Ok(
+						req_res::v1::AvailableDataFetchingResponse::from(Some(available_data))
+							.encode(),
+					));
+				}
+				.boxed();
+
+				NetworkAction::new(validator_index.0 as usize, future, size)
+			},
 			Requests::ChunkFetchingV1(outgoing_request) => {
-				let validator_index = outgoing_request.payload.index.0 as usize;
-				let chunk: ChunkResponse = state.chunks[validator_index].clone().into();
+				let chunk_index = outgoing_request.payload.index.0 as usize;
+				let chunk: ChunkResponse = state.chunks[chunk_index].clone().into();
 				let size = chunk.encoded_size();
+
+				let validator_index = state.validator_index(outgoing_request.peer);
+
 				let future = async move {
 					let _ = outgoing_request
 						.pending_response
@@ -129,7 +148,7 @@ impl TestEnvironment {
 				}
 				.boxed();
 
-				NetworkAction::new(validator_index, future, size)
+				NetworkAction::new(validator_index.0 as usize, future, size)
 			},
 			_ => panic!("received an unexpected request"),
 		}
@@ -179,7 +198,10 @@ impl TestEnvironment {
 						) => {
 							let chunk_size = state.chunks[0].encoded_size();
 							let _ = tx.send(Some(chunk_size));
-						}
+						},
+						AllMessages::ChainApi(ChainApiMessage::BlockNumber(hash, tx)) => {
+							tx.send(Ok(Some(2 as BlockNumber))).unwrap();
+						},
 						AllMessages::RuntimeApi(RuntimeApiMessage::Request(
 							_relay_parent,
 							RuntimeApiRequest::SessionInfo(
@@ -188,6 +210,14 @@ impl TestEnvironment {
 							)
 						)) => {
 							tx.send(Ok(Some(state.session_info()))).unwrap();
+						},
+						AllMessages::RuntimeApi(RuntimeApiMessage::Request(
+							_relay_parent,
+							RuntimeApiRequest::ClientFeatures(
+								tx,
+							)
+						)) => {
+							tx.send(Ok(ClientFeatures::AVAILABILITY_CHUNK_SHUFFLING)).unwrap();
 						}
 						_ => panic!("Unexpected input")
 					}
@@ -233,7 +263,7 @@ impl AvailabilityRecoverySubsystemInstance {
 			make_buffered_subsystem_context(spawn_task_handle.clone(), 4096 * 4);
 		let (collation_req_receiver, req_cfg) =
 			IncomingRequest::get_config_receiver(&ReqProtocolNames::new(&GENESIS_HASH, None));
-		let subsystem = AvailabilityRecoverySubsystem::with_chunks_only(
+		let subsystem = AvailabilityRecoverySubsystem::with_fast_path(
 			collation_req_receiver,
 			Metrics::try_register(&registry).unwrap(),
 		);
@@ -305,6 +335,20 @@ impl TestState {
 
 	fn impossibility_threshold(&self) -> usize {
 		self.validators.len() - self.threshold() + 1
+	}
+
+	fn validator_index(&self, peer: Recipient) -> ValidatorIndex {
+		match peer {
+			Recipient::Authority(validator_id) => self
+				.validator_authority_id
+				.iter()
+				.enumerate()
+				.find(|(_, id)| *id == &validator_id)
+				.map(|(index, _id)| index)
+				.expect("Invalid validator") as u32,
+			Recipient::Peer(_) => panic!("Should be a validator."),
+		}
+		.into()
 	}
 
 	async fn respond_to_available_data_query(&self, tx: oneshot::Sender<Option<AvailableData>>) {
@@ -445,7 +489,7 @@ fn derive_erasure_chunks_with_proofs_and_root(
 		.enumerate()
 		.map(|(index, (proof, chunk))| ErasureChunk {
 			chunk: chunk.to_vec(),
-			index: ValidatorIndex(index as _),
+			index: ChunkIndex(index as _),
 			proof: Proof::try_from(proof).unwrap(),
 		})
 		.collect::<Vec<ErasureChunk>>();
@@ -479,6 +523,9 @@ impl Default for TestInput {
 }
 
 pub async fn bench_chunk_recovery(env: &mut TestEnvironment) {
+	// sp_tracing::try_init_simple();
+	// sp_tracing::init_for_tests();
+
 	let input = env.input().clone();
 
 	env.send_signal(OverseerSignal::ActiveLeaves(ActiveLeavesUpdate::start_work(new_leaf(

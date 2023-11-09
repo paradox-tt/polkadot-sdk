@@ -32,6 +32,7 @@ clap = { version = "4.4.6", features = ["derive"] }
 futures = "0.3.21"
 futures-timer = "3.0.2"
 gum = { package = "tracing-gum", path = "../gum" }
+sp-tracing = { path = "../../../substrate/primitives/tracing" }
 polkadot-erasure-coding = { package = "polkadot-erasure-coding", path = "../../erasure-coding" }
 log = "0.4.17"
 env_logger = "0.9.0"

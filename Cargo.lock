@@ -13219,6 +13219,7 @@ dependencies = [
  "sp-core",
  "sp-keyring",
  "sp-keystore",
+ "sp-tracing 10.0.0",
  "tokio",
  "tracing-gum",
 ]
